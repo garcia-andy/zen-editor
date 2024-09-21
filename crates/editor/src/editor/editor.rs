@@ -15,7 +15,7 @@ use iced::{
     Task,
     Theme
 };
-use iced_aw::{ menu::{self, Item, Menu}, menu_bar, menu_items, TabBar, TabLabel};
+use iced_aw::{ TabBar, TabLabel};
 use registers::{ Event, Register};
 
 use crate::fileinfo::FileInfo;

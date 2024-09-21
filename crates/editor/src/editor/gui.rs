@@ -1,5 +1,5 @@
 
-use iced::{alignment, theme, widget::{button, container, text, tooltip, Container}, Element, Font, Length};
+use iced::{alignment,  widget::{button, container, text, tooltip}, Element, Font, Length};
 use registers::Event;
 
 /* ICONS */
