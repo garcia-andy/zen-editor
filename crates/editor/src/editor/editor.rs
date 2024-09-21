@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 
 use iced::{
-    alignment::Horizontal,
+    alignment::{Horizontal, Vertical},
     color,
     keyboard,
-    widget::{column, container, text, text_editor},
+    widget::{column, container, row, text, text_editor},
     Background,
     Border,
     Color,
@@ -228,50 +228,45 @@ impl Register for Editor {
     }
 
     fn view(&self) -> Element<'_, Event> {
-        let menu_tpl_1 = |items| 
-            Menu::new(items).max_width(120.0).offset(15.0).spacing(5.0);
-        
         let cursor = self.content.cursor_position();
         let num_lines = self.content.line_count();
 
-        let menu = menu_bar!(
-            (debug_button_s("File"), {
-                menu_tpl_1(menu_items!(
-                    (button_with_icon(icon_code(Icon::File.into()), "Open", Event::OpenFile))
-                    (button_with_icon(icon_code(Icon::Save.into()), "Save", Event::Save))
-                    (button_with_icon(icon_code(Icon::Refresh.into()), "Reload", Event::ScanAllFiles))
-                ))
-            })
-        ).draw_path(menu::DrawPath::Backdrop);
-
+        let buttons = row![
+            button_with_icon(icon_code(Icon::File.into()), "Open", Event::OpenFile),
+            button_with_icon(icon_code(Icon::Save.into()), "Save", Event::Save),
+            button_with_icon(icon_code(Icon::Refresh.into()), "Reload", Event::ScanAllFiles),
+        ].spacing(5).align_y(Vertical::Center).padding(2).width(Length::Fill);
+        
         let tabs = column!(
             self.files
             .iter()
             .fold(TabBar::new(Event::TabSelected), |tab_bar, info| {
                 let idx = tab_bar.size();
+                let content = info.path.to_str().unwrap().split("/").last()
+                    .expect("Unable to get file name").to_string();
                 tab_bar.push(
                     idx,
-                    TabLabel::Text(info.path.to_str().unwrap().to_string().split("/").last().unwrap().to_string()),
+                    TabLabel::Text(content),
                 )
             })
             .set_active_tab(&self.active_file)
             .on_close(Event::TabClosed)
             .spacing(1.0)
             .padding(2.0)
-            .icon_font(ICON)
             .width(Length::Fill)
             .height(Length::Shrink)
         ).width(Length::Fill)
         .padding(5);
 
         
-        let mut editor = text_editor(&self.content)
+        let mut editor = 
+            text_editor(&self.content)
             .font(Font::MONOSPACE)
             .style(|th: &Theme, _st| {
                 let style = text_editor::Style {
                     background: Background::Color(th.palette().background),
                     border: Border::default()
-                        .color(th.palette().success)
+                        .color(th.palette().primary)
                         .rounded(8.0)
                         .width(1.5),
                     icon: Color::WHITE,
@@ -298,7 +293,7 @@ impl Register for Editor {
         .width(Length::Fill);
 
         container(
-            column![menu,  tabs, editor, indicator]
+            column![buttons, tabs, editor, indicator]
                 .width(Length::Fill)
                 .height(Length::Fill),
         )

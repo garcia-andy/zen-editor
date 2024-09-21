@@ -1,10 +1,10 @@
 
-use iced::{alignment, widget::{button, row, text}, Element, Font, Length};
+use iced::{alignment, theme, widget::{button, container, text, tooltip, Container}, Element, Font, Length};
 use registers::Event;
 
 /* ICONS */
 
-pub const ICON: Font = Font::with_name("FontAwesome");
+pub const ICON: Font = Font::with_name("fontello");
 
 pub enum Icon {
     File,
@@ -25,9 +25,9 @@ impl From<Icon> for Element<'static, Event> {
 impl From<Icon> for char {
     fn from(icon: Icon) -> Self {
         match icon {
-            Icon::File => '\u{f016}',
-            Icon::Save => '\u{f019}',
-            Icon::Refresh => '\u{f021}',
+            Icon::File => '\u{e800}',
+            Icon::Save => '\u{e801}',
+            Icon::Refresh => '\u{e802}',
         }
     }
 }
@@ -50,16 +50,12 @@ pub fn button_with_icon(
     icon: impl Into<Element<'static, Event>>,
     label: &str,
     msg: Event,
-) -> button::Button<Event, iced::Theme, iced::Renderer> {
-    base_button(
-        row![
-            icon.into(),
-            text(label).align_y(alignment::Vertical::Center),
-        ]
-        .spacing(5).padding(4)
-        .align_y(iced::Alignment::Center),
+) -> tooltip::Tooltip<Event> {
+    tooltip(base_button(
+       icon.into(),
         msg,
-    )
+    ), label, tooltip::Position::FollowCursor)
+    .style( container::bordered_box )
 }
 
 pub fn labeled_button(

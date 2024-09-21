@@ -5,7 +5,7 @@ fn main() {
     let _ = iced::application("Zen editor", ZenCore::update, ZenCore::view)
         .subscription(ZenCore::subscription)
         .theme(ZenCore::theme)
-        .font(include_bytes!("../fonts/fontawesome-webfont.ttf"))
+        .font(include_bytes!("../fonts/fontello/fontello.ttf"))
         .font(iced_aw::iced_fonts::REQUIRED_FONT_BYTES)
         .run_with(
             || -> (ZenCore, Task<Event>) { 
