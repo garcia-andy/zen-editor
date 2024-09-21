@@ -1,13 +1,18 @@
 [workspace]
 resolver = "2"
-members = ["crates/zen", "crates/zen-core"]
+members = [ "crates/editor", "crates/registers","crates/zen", "crates/zen-core"]
 
-[[bin]]
-name = "zen-editor"
-path = "crates/zen/src/main.rs"
+#[[bin]]
+#name = "zen-editor"
+#path = "crates/zen/src/main.rs"
 
-[package]
-name = "zen-editor"
+[workspace.package.metadata.wix]
+upgrade-guid = "48D83F5F-F191-4DC0-BFFE-13F978658A6C"
+path-guid = "5B4830CE-B2D8-4069-84D3-1C85AD13ABF5"
+license = false
+eula = false
+
+[workspace.package]
 version = "0.0.1"
 edition = "2021"
 description = "The iced-rs code editor."
@@ -18,28 +23,16 @@ readme = "README.md"
 homepage = "https://github.com/agf030124/zen-editor"
 repository = "https://github.com/agf030124/zen-editor"
 
-[package.metadata.wix]
-upgrade-guid = "48D83F5F-F191-4DC0-BFFE-13F978658A6C"
-path-guid = "5B4830CE-B2D8-4069-84D3-1C85AD13ABF5"
-license = false
-eula = false
-
-[workspace.package]
-version = "0.0.1"
-edition = "2021"
-description = "The iced-rs code editor."
-publish = false
-authors = ["Andy Garcia <agf030124@gmail.com>"]
-license-file = "LICENSE"
 
 [workspace.metadata.bundle]
 identifier = "com.github.agf030124.zen"
 copyright = "Copyright © 2023 Andy Garcia"
 
-
 [workspace.dependencies]
 iced = {version = "0.13.1", features = ["advanced", "canvas", "highlighter", "image", "lazy", "markdown", "multi-window", "qr_code", "smol", "svg", "web-colors"]}
 inline_tweak = { version = "1.1.1", features = ["derive"] }
+rfd = "0.15.0"
+iced_aw = "0.11.0"
 
 [profile.release]
 debug = "limited"

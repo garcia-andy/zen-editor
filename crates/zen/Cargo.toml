@@ -21,7 +21,8 @@ name = "zen"
 path = "src/main.rs"
 
 [dependencies]
-iced.workspace = true
+iced = {version = "0.13.1", features = ["advanced", "canvas", "highlighter", "image", "lazy", "markdown", "multi-window", "qr_code", "smol", "svg", "web-colors"]}
+iced_aw.workspace = true
 zen-core = { path = "../zen-core" }
 
 [lints]

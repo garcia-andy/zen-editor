@@ -1,19 +1,18 @@
 [package]
-name = "zen-core"
+name = "registers"
+metadata.workspace = true
 version.workspace = true
 edition.workspace = true
 description.workspace = true
 publish.workspace = true
 authors.workspace = true
-
-[lib]
-path = "src/lib.rs"
+license-file.workspace = true
+readme.workspace = true
+homepage.workspace = true
+repository.workspace = true
 
 [dependencies]
-registers = { path = "../registers" }
-editor = { path = "../editor" }
 iced.workspace = true
-inline_tweak.workspace = true
 
 [lints]
 workspace = true

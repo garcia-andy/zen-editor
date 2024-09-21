@@ -1,0 +1,22 @@
+[package]
+metadata.workspace = true
+name = "editor"
+version.workspace = true
+edition.workspace = true
+description.workspace = true
+publish.workspace = true
+authors.workspace = true
+license-file.workspace = true
+readme.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[dependencies]
+iced.workspace = true
+inline_tweak.workspace = true
+rfd.workspace = true
+registers = { path = "../registers" }
+iced_aw.workspace = true
+
+[lints]
+workspace = true
