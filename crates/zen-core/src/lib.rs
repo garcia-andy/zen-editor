@@ -55,11 +55,28 @@ impl ZenCore {
 
 impl Register for ZenCore {
     fn update(&mut self, event: Event) -> Task<Event> {
-        self.registers.iter_mut().fold(
-            Task::none(),
-            |t, r| 
-            t.chain(r.update(event.clone()))
-        )
+        match event {
+            Event::None => Task::none(),
+            Event::ThemeChanged(th) => {
+                if th.is_dark(){
+                    self.theme = Theme::Dark;
+                }else{
+                    self.theme = Theme::Light;
+                }
+                self.registers.iter_mut().fold(
+                    Task::none(),
+                    |t, r| 
+                    t.chain(r.update(event.clone()))
+                )
+            },
+            _ => {
+                self.registers.iter_mut().fold(
+                    Task::none(),
+                    |t, r| 
+                    t.chain(r.update(event.clone()))
+                )
+            }
+        }
     }
     
     fn subscription(&self) -> Subscription<Event> {

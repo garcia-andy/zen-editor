@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use iced::widget::text_editor;
+use iced::{highlighter, widget::text_editor};
 
 
 #[derive(Debug, Clone)]
@@ -20,4 +20,6 @@ pub enum Event {
     TabSelected(usize),
     TabClosed(usize),
     NewTab,
+    
+    ThemeChanged(highlighter::Theme),
 }

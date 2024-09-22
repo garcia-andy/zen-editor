@@ -1,20 +1,7 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::{Mutex, MutexGuard, OnceLock}};
 
 use iced::{
-    alignment::{Horizontal, Vertical},
-    color,
-    keyboard,
-    widget::{column, container, row, text, text_editor},
-    highlighter,
-    Background,
-    Border,
-    Color,
-    Element,
-    Font,
-    Length,
-    Subscription,
-    Task,
-    Theme
+    alignment::{Horizontal, Vertical}, color, highlighter, keyboard, widget::{column, container, horizontal_space, pick_list, row, text, text_editor}, Background, Border, Color, Element, Font, Length, Subscription, Task, Theme
 };
 use iced_aw::{ TabBar, TabLabel};
 use registers::{ Event, Register};
@@ -42,12 +29,18 @@ impl KeyBinding {
     }
 }
 
+fn get_global_hashmap() -> MutexGuard<'static, HashMap<char, Vec<KeyBinding>>> {
+    static MAP_KEYS: OnceLock<Mutex<HashMap<char, Vec<KeyBinding>>>> = OnceLock::new();
+    MAP_KEYS.get_or_init(|| Mutex::new(HashMap::new()))
+        .lock()
+        .expect("Let's hope the lock isn't poisoned")
+}
+
 pub struct Editor {
     content: text_editor::Content,
     pub files: Vec<FileInfo>,
     pub active_file: usize,
-    pub key_bindings: Vec<KeyBinding>,
-    pub key_bindings_map: HashMap<char, Vec<KeyBinding>>,
+    pub theme: highlighter::Theme,
 }
 
 impl Editor {
@@ -56,8 +49,7 @@ impl Editor {
             content: text_editor::Content::new(),
             files: Vec::new(),
             active_file: 0,
-            key_bindings: Vec::new(),
-            key_bindings_map: HashMap::new(),
+            theme: highlighter::Theme::Base16Ocean,
         }
     }
 
@@ -66,26 +58,23 @@ impl Editor {
             content: text_editor::Content::with_text(t.get_content().as_str()),
             files: t.files.clone(),
             active_file: t.active_file,
-            key_bindings: t.key_bindings.clone(),
-            key_bindings_map: t.key_bindings_map.clone(),
+            theme: t.theme.clone(),
         }
     }
 
     pub fn get_content(&self) -> String {
         self.content.text()
     }
-    
-    pub fn get_key_bindings(&self) -> Vec<KeyBinding> {
-        self.key_bindings.clone()
-    }
 
     pub fn get_key_bindings_map(&self) -> HashMap<char, Vec<KeyBinding>> {
-        self.key_bindings_map.clone()
+        get_global_hashmap().clone()
     }
     
     pub fn add_key_binding(&mut self, key: char, ctrl: bool, shift: bool, event: Event) {
-        self.key_bindings.push(KeyBinding::new(key, ctrl, shift, event.clone()));
-        self.key_bindings_map.entry(key).or_insert(Vec::new()).push(KeyBinding::new(key, ctrl, shift, event));
+        let mut map = get_global_hashmap();
+        map.entry(key)
+            .or_insert(Vec::new())
+            .push(KeyBinding::new(key, ctrl, shift, event.clone()));
     }
     
     pub fn add_ctrl_key_binding(&mut self, key: char, shift: bool, event: Event) {
@@ -195,36 +184,33 @@ impl Register for Editor {
             }
             Event::TabClosed(idx) => Task::done(Event::Quit(Some(idx))),
             Event::NewTab => Task::done(Event::OpenFile),
+            Event::ThemeChanged(theme) => {
+                self.theme = theme;
+                Task::none()
+            }
             Event::None => Task::none(),
         }
     }
 
     fn subscription(&self) -> Subscription<Event> {
-        keyboard::on_key_release(|k, modif| -> Option<Event> {
-            if modif.control() {
-                if modif.shift() {
-                    match k.as_ref() {
-                        keyboard::Key::Character("r") => {
-                            Some(Event::ScanAllFiles)
+        keyboard::on_key_release(|k,m| {
+            let map = get_global_hashmap();
+            
+            if let keyboard::Key::Character(c) = k {
+                // Get the first character of the key
+                let key = &c.as_str().chars().next().unwrap();
+                
+                if let Some(bindings) = map.get(key) {
+                    for binding in bindings {
+                        if binding.ctrl == m.control() && binding.shift == m.shift() {
+                            return Some(binding.event.clone());
                         }
-                        _ => None,
-                    }
-                } else {
-                    match k.as_ref() {
-                        keyboard::Key::Character("s") => Some(Event::Save),
-                        keyboard::Key::Character("q") => {
-                            Some(Event::Quit(None))
-                        }
-                        keyboard::Key::Character("o") => Some(Event::OpenFile),
-                        keyboard::Key::Character("r") => {
-                            Some(Event::ScanFile(None))
-                        }
-                        _ => None,
                     }
                 }
-            } else {
-                None
+                
             }
+            
+            None
         })
     }
 
@@ -236,6 +222,8 @@ impl Register for Editor {
             button_with_icon(icon_code(Icon::File.into()), "Open", Event::OpenFile),
             button_with_icon(icon_code(Icon::Save.into()), "Save", Event::Save),
             button_with_icon(icon_code(Icon::Refresh.into()), "Reload", Event::ScanAllFiles),
+            horizontal_space(),
+            pick_list(highlighter::Theme::ALL, Some(self.theme), Event::ThemeChanged),
         ].spacing(5).align_y(Vertical::Center).padding(2).width(Length::Fill);
         
         let tabs = column!(
@@ -272,9 +260,8 @@ impl Register for Editor {
         let mut editor = 
             text_editor(&self.content)
             .font(Font::MONOSPACE)
-            .highlight(languaje.as_str(), highlighter::Theme::Base16Ocean)
+            .highlight(languaje.as_str(), self.theme.clone())
             .style(|th: &Theme, _st| {
-                
                 text_editor::Style {
                     background: Background::Color(th.palette().background),
                     border: Border::default()
