@@ -12,6 +12,7 @@ path = "src/lib.rs"
 [dependencies]
 registers = { path = "../registers" }
 editor = { path = "../editor" }
+top_menu = { path = "../top_menu" }
 iced.workspace = true
 inline_tweak.workspace = true
 

@@ -1,6 +1,6 @@
 [package]
+name = "top_menu"
 metadata.workspace = true
-name = "editor"
 version.workspace = true
 edition.workspace = true
 description.workspace = true
@@ -13,8 +13,6 @@ repository.workspace = true
 
 [dependencies]
 iced.workspace = true
-inline_tweak.workspace = true
-rfd.workspace = true
 registers = { path = "../registers" }
 ui = { path = "../ui" }
 iced_aw.workspace = true

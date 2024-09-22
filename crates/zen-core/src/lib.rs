@@ -3,21 +3,12 @@ pub use registers::{Register, Event};
 
 // registers
 pub use editor::{Editor, KeyBinding};
+pub use top_menu::TopMenu;
 
 pub struct ZenCore {
     pub title: String,
     pub theme: Theme,
     registers: Vec<Box<dyn registers::Register>>,
-}
-
-impl Default for ZenCore {
-    fn default() -> Self {
-        let editor: Box<dyn Register> = Box::new(Editor::new());
-        
-        Self::new_with("Zen".to_string(), Theme::Dark, vec![
-            editor
-        ])
-    }
 }
 
 impl ZenCore {

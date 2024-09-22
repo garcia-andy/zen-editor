@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = [ "crates/editor", "crates/registers","crates/zen", "crates/zen-core"]
+members = [ "crates/editor", "crates/registers", "crates/top_menu", "crates/ui","crates/zen", "crates/zen-core"]
 
 #[[bin]]
 #name = "zen-editor"

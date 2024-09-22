@@ -17,11 +17,14 @@ fn main() {
                     KeyBinding::new('r', true, false, Event::ScanAllFiles),
                     KeyBinding::new('r', true, true, Event::ScanFile(None)),
                 ]);
+                
+                let top_menu = Box::new(zen_core::TopMenu::new());
+                
                 (
                     ZenCore::new_with(
                         "Zen Editor (v1)".to_string(), 
-                        iced::Theme::Dracula, 
-                        vec![Box::new(editor)]
+                        iced::Theme::Dark, 
+                        vec![top_menu, Box::new(editor)]
                     ),
                     Task::none()
                 )

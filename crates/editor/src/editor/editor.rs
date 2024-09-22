@@ -1,14 +1,13 @@
 use std::{collections::HashMap, sync::{Mutex, MutexGuard, OnceLock}};
 
 use iced::{
-    alignment::{Horizontal, Vertical}, color, highlighter, keyboard, widget::{column, container, horizontal_space, pick_list, row, text, text_editor}, Background, Border, Color, Element, Font, Length, Subscription, Task, Theme
+    alignment::Horizontal, color, highlighter, keyboard, widget::{column, container, text, text_editor}, Background, Border, Color, Element, Font, Length, Subscription, Task, Theme
 };
 use iced_aw::{ TabBar, TabLabel};
 use registers::{ Event, Register};
 
 use crate::fileinfo::FileInfo;
 use crate::services::*;
-use crate::gui::*;
 
 #[derive(Debug,Clone)]
 pub struct KeyBinding {
@@ -217,14 +216,6 @@ impl Register for Editor {
     fn view(&self) -> Element<'_, Event> {
         let cursor = self.content.cursor_position();
         let num_lines = self.content.line_count();
-
-        let buttons = row![
-            button_with_icon(icon_code(Icon::File.into()), "Open", Event::OpenFile),
-            button_with_icon(icon_code(Icon::Save.into()), "Save", Event::Save),
-            button_with_icon(icon_code(Icon::Refresh.into()), "Reload", Event::ScanAllFiles),
-            horizontal_space(),
-            pick_list(highlighter::Theme::ALL, Some(self.theme), Event::ThemeChanged),
-        ].spacing(5).align_y(Vertical::Center).padding(2).width(Length::Fill);
         
         let tabs = column!(
             self.files
@@ -291,7 +282,7 @@ impl Register for Editor {
         .width(Length::Fill);
 
         container(
-            column![buttons, tabs, editor, indicator]
+            column![tabs, editor, indicator]
                 .width(Length::Fill)
                 .height(Length::Fill),
         )
