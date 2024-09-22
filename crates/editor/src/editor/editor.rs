@@ -2,12 +2,12 @@ use std::{collections::HashMap, sync::{Mutex, MutexGuard, OnceLock}};
 
 use iced::{
     alignment, keyboard, 
-    widget::{button, container, horizontal_space, pane_grid, row, text}, 
+    widget::{container, horizontal_space, pane_grid, row, text}, 
     Element, Length, Subscription, Task
 };
 use registers::{ Event, Register};
 
-use ui::styles;
+use ui::{button_with_icon, danger_button_with_icon, styles, Icon};
 use crate::pane::Pane;
 
 #[derive(Debug,Clone)]
@@ -170,36 +170,53 @@ impl Register for Editor {
             pane_grid(&self.panes, |id, pane, _is_maximized| {
                 let is_focused = Some(id) == focus;
                 
-                let button = |label, message| {
-                        button(
-                            text(label)
-                            .align_x(alignment::Horizontal::Center)
-                            .size(16)
+                let button = 
+                    |icon: Icon, label: &'static str, message: Event| {
+                        button_with_icon(
+                            icon,
+                            label, message
                         )
                         .padding(4)
-                        .on_press(message)
+                        .style(styles::tooltip_style)
                     };
-                let content = if pane.is_pinned { "Unpin" } else { "Pin" };
+                
+                let danger_button = 
+                    |icon: Icon, label: &'static str, message: Event| {
+                        danger_button_with_icon(
+                            icon,
+                            label, message
+                        )
+                        .padding(4)
+                        .style(styles::tooltip_danger_style)
+                    };
+                
+                let content = if pane.is_pinned { Icon::Pin } else { Icon::Unpin };
                 let pin_button = 
                     button(
                         content,
+                        "Pin/Unpin",
                         Event::TogglePin(id)
-                    ).style(styles::button_styles);
+                    );
                 
                 let controls = row![
                         button(
-                            "Horizontal",
+                            Icon::HorizontalSplit,
+                            "Split Horizontal",
                             Event::Split(pane_grid::Axis::Horizontal, id),
                         ),
                         button(
-                            "Vertical",
+                            Icon::VerticalSplit,
+                            "Split Vertical",
                             Event::Split(pane_grid::Axis::Vertical, id),
                         )
                     ]
                     .push_maybe(if total_panes > 1 && !pane.is_pinned {
                         Some(
-                            button("Close", Event::Close(id))
-                                .style(button::danger)
+                            danger_button(
+                                Icon::Close,
+                                "Close", 
+                                Event::Close(id)
+                            )
                         )
                     } else {
                         None

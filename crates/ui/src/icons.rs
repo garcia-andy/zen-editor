@@ -7,6 +7,11 @@ pub enum Icon {
     File,
     Save,
     Refresh,
+    HorizontalSplit,
+    VerticalSplit,
+    Close,
+    Pin,
+    Unpin,
 }
 
 pub fn icon_code(codepoint: char) -> Element<'static, Event> {
@@ -25,6 +30,11 @@ impl From<Icon> for char {
             Icon::File => '\u{e800}',
             Icon::Save => '\u{e801}',
             Icon::Refresh => '\u{e802}',
+            Icon::HorizontalSplit => '\u{e803}',
+            Icon::VerticalSplit => '\u{e804}',
+            Icon::Close => '\u{e805}',
+            Icon::Pin => '\u{e806}',
+            Icon::Unpin => '\u{e807}',
         }
     }
 }

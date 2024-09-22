@@ -11,6 +11,28 @@ pub fn base_button<'a>(
         .on_press(msg)
 }
 
+pub fn danger_button<'a>(
+    content: impl Into<Element<'a, Event>>,
+    msg: Event,
+) -> button::Button<'a, Event> {
+    button(content)
+        .padding([4, 8])
+        .style(iced::widget::button::danger)
+        .on_press(msg)
+}
+
+pub fn danger_button_with_icon(
+    icon: impl Into<Element<'static, Event>>,
+    label: &str,
+    msg: Event,
+) -> tooltip::Tooltip<Event> {
+    tooltip(danger_button(
+       icon.into(),
+        msg,
+    ), label, tooltip::Position::FollowCursor)
+    .style( container::bordered_box )
+}
+
 pub fn button_with_icon(
     icon: impl Into<Element<'static, Event>>,
     label: &str,
