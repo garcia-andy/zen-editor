@@ -1,13 +1,14 @@
 use std::{collections::HashMap, sync::{Mutex, MutexGuard, OnceLock}};
 
 use iced::{
-    alignment::Horizontal, color, highlighter, keyboard, widget::{column, container, text, text_editor}, Background, Border, Color, Element, Font, Length, Subscription, Task, Theme
+    alignment, keyboard, 
+    widget::{button, container, horizontal_space, pane_grid, row, text}, 
+    Element, Length, Subscription, Task
 };
-use iced_aw::{ TabBar, TabLabel};
 use registers::{ Event, Register};
 
-use crate::fileinfo::FileInfo;
-use crate::services::*;
+use ui::styles;
+use crate::pane::Pane;
 
 #[derive(Debug,Clone)]
 pub struct KeyBinding {
@@ -36,33 +37,25 @@ fn get_global_hashmap() -> MutexGuard<'static, HashMap<char, Vec<KeyBinding>>> {
 }
 
 pub struct Editor {
-    content: text_editor::Content,
-    pub files: Vec<FileInfo>,
-    pub active_file: usize,
-    pub theme: highlighter::Theme,
+    panes: pane_grid::State<Pane>,
+    focus: Option<pane_grid::Pane>,
 }
 
 impl Editor {
     pub fn new() -> Self {
+        let (state, grid_panel) = pane_grid::State::new(Pane::new(0));
         Self {
-            content: text_editor::Content::new(),
-            files: Vec::new(),
-            active_file: 0,
-            theme: highlighter::Theme::Base16Ocean,
+            panes: state,
+            focus: Some(grid_panel),
         }
     }
 
     pub fn new_from(t: &Self) -> Self {
-        Self {
-            content: text_editor::Content::with_text(t.get_content().as_str()),
-            files: t.files.clone(),
-            active_file: t.active_file,
-            theme: t.theme.clone(),
-        }
-    }
-
-    pub fn get_content(&self) -> String {
-        self.content.text()
+        let this = Self {
+            panes: t.panes.clone(),
+            focus: t.focus,
+        };
+        this
     }
 
     pub fn get_key_bindings_map(&self) -> HashMap<char, Vec<KeyBinding>> {
@@ -95,99 +88,55 @@ impl Editor {
 impl Register for Editor {
     fn update(&mut self, _event: Event) -> Task<Event> {
         match _event {
-            Event::EditorAction(action) => {
-                self.content.perform(action);
-                self.files[self.active_file].content = self.content.text();
+            Event::PaneDragged(pane_grid::DragEvent::Dropped {
+                pane,
+                target,
+            }) => {
+                self.panes.drop(pane, target);
                 Task::none()
-            }
-            Event::Save => {
-                Task::perform(save_content(Editor::new_from(self)), |_| {
-                    Event::Saved
-                })
-            }
-            Event::Quit(idx) => {
-                let i = if let Some(index) = idx {
-                    index
-                } else {
-                    self.active_file
-                };
-                Task::perform(
-                    quit_file(Editor::new_from(self), i), 
-                    |path| {
-                    if let Some(path) = path {
-                        Event::Quited(path)
-                    } else {
-                        Event::RefreshEditorContent
-                    }
-                })
-            }
-            Event::OpenFile => {
-                Task::perform(open_file(Editor::new_from(self)), |r| {
-                    Event::Opened(r)
-                })
-            }
-            Event::Saved => Task::none(),
-            Event::Quited(_path) => {
-                for (i, f) in self.files.iter().enumerate() {
-                    if f.path.to_str().unwrap() == _path.to_str().unwrap() {
-                        self.files.remove(i);
-
-                        if self.active_file > (self.files.len() / 2) {
-                            self.active_file = self.files.len() - 1;
-                        } else {
-                            self.active_file = 0;
-                        }
-                        break;
-                    }
+            },
+            Event::TogglePin(pane) => {
+                if let Some(Pane { is_pinned, .. }) = self.panes.get_mut(pane) {
+                    *is_pinned = !*is_pinned;
                 }
-                Task::done(Event::RefreshEditorContent)
-            }
-            Event::Opened(Option::Some((path, content))) => {
-                self.files.push(FileInfo::new(path, content));
-                self.active_file = self.files.len() - 1;
-                Task::done(Event::RefreshEditorContent)
-            }
-            Event::Opened(Option::None) => Task::none(),
-            Event::RefreshEditorContent => {
-                if self.files.len() > 0 {
-                    self.content = text_editor::Content::with_text(
-                        self.files[self.active_file].content.as_str(),
-                    );
-                } else {
-                    self.content = text_editor::Content::new();
+                Task::none()
+            },
+            Event::Split(axis, pane) => {
+                let state = Pane::new(self.panes.len());
+                let result =
+                    self.panes.split(axis, pane, state.clone());
+                
+                if let Some((pane, _)) = result {
+                    self.focus = Some(pane);
+                }
+                Task::none()
+            },
+            Event::PaneClicked(pane) => {
+                self.focus = Some(pane);
+                Task::none()
+            },
+            Event::PaneResized(pane_grid::ResizeEvent { split, ratio }) => {
+                self.panes.resize(split, ratio);
+                Task::none()
+            },
+            Event::Close(pane) => {
+                if let Some((_, sibling)) = self.panes.close(pane) {
+                    self.focus = Some(sibling);
                 }
                 Task::none()
             }
-            Event::ScanFile(path) => {
-                let idx = 
-                    scan_file(Editor::new_from(self), path);
-                Task::perform(idx, |need_refresh| {
-                    if need_refresh {
-                        Event::RefreshEditorContent
-                    } else {
-                        Event::None
+            _ => {
+                if let Some(p) = self.focus {
+                    let pane = self.panes.get_mut(p).expect("Unable to get pane");
+                    return pane.core.update(_event.clone());
+                }
+                self.panes.iter_mut().fold(
+                    Task::none(),
+                    |task, (_, e)| {
+                        Task::chain(task,e.core.update(_event.clone()))
                     }
-                })
-            }
-            Event::ScanAllFiles => {
-                self.files.iter_mut().for_each(|f| {
-                    f.content = std::fs::read_to_string(f.path.clone())
-                        .expect("Unable to read file");
-                });
-
-                Task::done(Event::RefreshEditorContent)
-            }
-            Event::TabSelected(idx) => {
-                self.active_file = idx;
-                Task::done(Event::RefreshEditorContent)
-            }
-            Event::TabClosed(idx) => Task::done(Event::Quit(Some(idx))),
-            Event::NewTab => Task::done(Event::OpenFile),
-            Event::ThemeChanged(theme) => {
-                self.theme = theme;
-                Task::none()
-            }
-            Event::None => Task::none(),
+                )
+            },
         }
     }
 
@@ -212,79 +161,83 @@ impl Register for Editor {
             None
         })
     }
-
+    
     fn view(&self) -> Element<'_, Event> {
-        let cursor = self.content.cursor_position();
-        let num_lines = self.content.line_count();
+        let total_panes = self.panes.len();
+        let focus = self.focus;
         
-        let tabs = column!(
-            self.files
-            .iter()
-            .fold(TabBar::new(Event::TabSelected), |tab_bar, info| {
-                let idx = tab_bar.size();
-                let content = info.path.to_str().unwrap().split("/").last()
-                    .expect("Unable to get file name").to_string();
-                tab_bar.push(
-                    idx,
-                    TabLabel::Text(content),
+        let grid = 
+            pane_grid(&self.panes, |id, pane, _is_maximized| {
+                let is_focused = Some(id) == focus;
+                
+                let button = |label, message| {
+                        button(
+                            text(label)
+                            .align_x(alignment::Horizontal::Center)
+                            .size(16)
+                        )
+                        .padding(4)
+                        .on_press(message)
+                    };
+                let content = if pane.is_pinned { "Unpin" } else { "Pin" };
+                let pin_button = 
+                    button(
+                        content,
+                        Event::TogglePin(id)
+                    ).style(styles::button_styles);
+                
+                let controls = row![
+                        button(
+                            "Horizontal",
+                            Event::Split(pane_grid::Axis::Horizontal, id),
+                        ),
+                        button(
+                            "Vertical",
+                            Event::Split(pane_grid::Axis::Vertical, id),
+                        )
+                    ]
+                    .push_maybe(if total_panes > 1 && !pane.is_pinned {
+                        Some(
+                            button("Close", Event::Close(id))
+                                .style(button::danger)
+                        )
+                    } else {
+                        None
+                    })
+                    .spacing(5)
+                        .padding(5);
+                
+                let title_bar = 
+                    pane_grid::TitleBar::new(
+                        row![
+                            pin_button,
+                            text("Editor".to_string()),
+                            horizontal_space(),
+                            controls
+                        ].align_y(alignment::Vertical::Center)
+                        .padding(4)
+                        .spacing(5)
+                    );
+                
+                pane_grid::Content::new(
+                    pane.core.view()
                 )
-            })
-            .set_active_tab(&self.active_file)
-            .on_close(Event::TabClosed)
-            .spacing(1.0)
-            .padding(2.0)
-            .width(Length::Fill)
-            .height(Length::Shrink)
-        ).width(Length::Fill)
-        .padding(5);
-
-        let languaje = 
-        if let Some(info) = self.files.get(self.active_file) {
-            if let Some(ext) = info.path.extension() {
-                    ext.to_str().unwrap().to_lowercase()
-            }else{
-                    "txt".to_string()
-            }
-        }else{
-                "txt".to_string()
-        };
-        let mut editor = 
-            text_editor(&self.content)
-            .font(Font::MONOSPACE)
-            .highlight(languaje.as_str(), self.theme.clone())
-            .style(|th: &Theme, _st| {
-                text_editor::Style {
-                    background: Background::Color(th.palette().background),
-                    border: Border::default()
-                        .color(th.palette().primary)
-                        .rounded(8.0)
-                        .width(1.5),
-                    icon: Color::WHITE,
-                    placeholder: color!(0xc2c2c2),
-                    value: color!(0xefefef),
-                    selection: color!(0x525282),
-                }
-            })
-            .height(Length::Fill);
-
-        if self.files.len() > 0 {
-            editor = editor.on_action(Event::EditorAction);
-        }
+                .title_bar( title_bar )
+                .style(if is_focused {
+                    styles::pane_focused
+                }else{
+                    styles::pane_active
+                }).into()
+                
+            }).width(Length::Fill)
+            .height(Length::Fill)
+            .on_click(Event::PaneClicked)
+            .on_drag(Event::PaneDragged)
+            .on_resize(5, Event::PaneResized)
+            .spacing(5);
         
-        let indicator = text(format!(
-            "Lines {num_lines} | Cursor: {} {}",
-            cursor.0, cursor.1
-        ))
-        .color(iced::color!(0xc2c2c2))
-        .font(Font::DEFAULT)
-        .line_height(text::LineHeight::Relative(2.0))
-        .align_x(Horizontal::Right)
-        .width(Length::Fill);
-
         container(
-            column![tabs, editor, indicator]
-                .width(Length::Fill)
-                .height(Length::Fill),
+            grid
         )
         .width(Length::Fill)
         .height(Length::Fill)

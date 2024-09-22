@@ -1,8 +1,8 @@
-use crate::editor::Editor;
+use crate::editor_core::EditorCore;
 use crate::fileinfo::FileInfo;
 use std::path::PathBuf;
 
-pub async fn scan_file(mut this: Editor, path: Option<PathBuf>) -> bool {
+pub async fn scan_file(mut this: EditorCore, path: Option<PathBuf>) -> bool {
     let path = if let Some(p) = path {
         p
     } else {
@@ -21,7 +21,7 @@ pub async fn scan_file(mut this: Editor, path: Option<PathBuf>) -> bool {
     idx == this.active_file
 }
 
-pub async fn open_file(mut this: Editor) -> Option<(PathBuf, String)> {
+pub async fn open_file(mut this: EditorCore) -> Option<(PathBuf, String)> {
     let file = rfd::FileDialog::new().pick_file();
     if let Some(file) = file {
         load_file(&mut this, Some(file)).await;
@@ -33,7 +33,7 @@ pub async fn open_file(mut this: Editor) -> Option<(PathBuf, String)> {
     }
 }
 
-pub async fn load_file(this: &mut Editor, path: Option<PathBuf>) {
+pub async fn load_file(this: &mut EditorCore, path: Option<PathBuf>) {
     let file_path = if let Some(p) = path {
         p
     } else {
@@ -44,7 +44,7 @@ pub async fn load_file(this: &mut Editor, path: Option<PathBuf>) {
     this.files.push(FileInfo::new(file_path, content));
 }
 
-pub async fn save_file(this: &mut Editor, path: Option<PathBuf>) {
+pub async fn save_file(this: &mut EditorCore, path: Option<PathBuf>) {
     let file_path = if let Some(p) = path {
         p
     } else {
@@ -68,7 +68,7 @@ pub async fn save_file(this: &mut Editor, path: Option<PathBuf>) {
     }
 }
 
-pub async fn quit_file(mut this: Editor, idx: usize) -> Option<PathBuf> {
+pub async fn quit_file(mut this: EditorCore, idx: usize) -> Option<PathBuf> {
     if this.files.len() >= 1 {
         let ret = this.files.remove(idx);
 
@@ -86,7 +86,7 @@ pub async fn quit_file(mut this: Editor, idx: usize) -> Option<PathBuf> {
     }
 }
 
-pub async fn save_content(mut this: Editor) {
+pub async fn save_content(mut this: EditorCore) {
     if this.files.len() >= 1 {
         let buf = this.files[this.active_file].clone();
         save_file(&mut this, Some(buf.path)).await;
