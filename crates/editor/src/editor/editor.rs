@@ -5,6 +5,7 @@ use iced::{
     color,
     keyboard,
     widget::{column, container, row, text, text_editor},
+    highlighter,
     Background,
     Border,
     Color,
@@ -258,12 +259,23 @@ impl Register for Editor {
         ).width(Length::Fill)
         .padding(5);
 
-        
+        let languaje = 
+        if let Some(info) = self.files.get(self.active_file) {
+            if let Some(ext) = info.path.extension() {
+                    ext.to_str().unwrap().to_lowercase()
+            }else{
+                    "txt".to_string()
+            }
+        }else{
+                "txt".to_string()
+        };
         let mut editor = 
             text_editor(&self.content)
             .font(Font::MONOSPACE)
+            .highlight(languaje.as_str(), highlighter::Theme::Base16Ocean)
             .style(|th: &Theme, _st| {
-                let style = text_editor::Style {
+                
+                text_editor::Style {
                     background: Background::Color(th.palette().background),
                     border: Border::default()
                         .color(th.palette().primary)
@@ -273,8 +285,7 @@ impl Register for Editor {
                     placeholder: color!(0xc2c2c2),
                     value: color!(0xefefef),
                     selection: color!(0x525282),
-                };
-                style
+                }
             })
             .height(Length::Fill);
 
