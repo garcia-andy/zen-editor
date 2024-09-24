@@ -1,40 +1,15 @@
-use std::{collections::HashMap, sync::{Mutex, MutexGuard, OnceLock}};
+use std::collections::HashMap;
 
 use iced::{
-    alignment, keyboard, 
-    widget::{container, horizontal_space, pane_grid, row, text}, 
+    keyboard, 
+    widget::{container, pane_grid, row}, 
     Element, Length, Subscription, Task
 };
 use registers::{ Event, Register};
 
 use ui::{button_with_icon, danger_button_with_icon, styles, Icon};
-use crate::pane::Pane;
+use crate::{pane::Pane, key_bindings::*};
 
-#[derive(Debug,Clone)]
-pub struct KeyBinding {
-    pub key: char,
-    pub ctrl: bool,
-    pub shift: bool,
-    pub event: Event,
-}
-
-impl KeyBinding {
-    pub fn new(key: char, ctrl: bool, shift: bool, event: Event) -> Self {
-        Self {
-            key,
-            ctrl,
-            shift,
-            event,
-        }
-    }
-}
-
-fn get_global_hashmap() -> MutexGuard<'static, HashMap<char, Vec<KeyBinding>>> {
-    static MAP_KEYS: OnceLock<Mutex<HashMap<char, Vec<KeyBinding>>>> = OnceLock::new();
-    MAP_KEYS.get_or_init(|| Mutex::new(HashMap::new()))
-        .lock()
-        .expect("Let's hope the lock isn't poisoned")
-}
 
 pub struct Editor {
     panes: pane_grid::State<Pane>,
@@ -62,25 +37,22 @@ impl Editor {
         get_global_hashmap().clone()
     }
     
-    pub fn add_key_binding(&mut self, key: char, ctrl: bool, shift: bool, event: Event) {
+    pub fn add_key_binding(&mut self, kb: KeyBinding) {
+        let mut map = get_global_hashmap();
+        map.entry(kb.key)
+            .or_insert(Vec::new())
+            .push(kb);
+    }
+    
+    pub fn make_key_binding(&mut self, key: char, ctrl: bool, shift: bool, alt: bool, event: Event) {
         let mut map = get_global_hashmap();
         map.entry(key)
             .or_insert(Vec::new())
-            .push(KeyBinding::new(key, ctrl, shift, event.clone()));
-    }
-    
-    pub fn add_ctrl_key_binding(&mut self, key: char, shift: bool, event: Event) {
-        self.add_key_binding(key, true, shift, event.clone());
-    }
-
-    pub fn add_shift_key_binding(&mut self, key: char, event: Event) {
-        self.add_key_binding(key, true, true, event.clone());
+            .push(KeyBinding::new(key, ctrl, shift, alt, event.clone()));
     }
     
     pub fn add_keys_bindings(&mut self, bindings: Vec<KeyBinding>) {
-        for binding in bindings {
-            self.add_key_binding(binding.key, binding.ctrl, binding.shift, binding.event);
-        }
+        bindings.iter().for_each(move |kb| self.add_key_binding(kb.clone()));
     }
     
 }
@@ -95,6 +67,7 @@ impl Register for Editor {
                 self.panes.drop(pane, target);
                 Task::none()
             },
+            Event::PaneDragged(_) => { Task::none() }
             Event::TogglePin(pane) => {
                 if let Some(Pane { is_pinned, .. }) = self.panes.get_mut(pane) {
                     *is_pinned = !*is_pinned;
@@ -150,7 +123,12 @@ impl Register for Editor {
                 
                 if let Some(bindings) = map.get(key) {
                     for binding in bindings {
-                        if binding.ctrl == m.control() && binding.shift == m.shift() {
+                        if 
+                                binding.ctrl == (m.control() || m.command())
+                            &&  binding.shift == m.shift()
+                            &&  binding.alt == m.alt()
+                        {
+                            println!("Binding {binding:?} matched");
                             return Some(binding.event.clone());
                         }
                     }
@@ -190,27 +168,25 @@ impl Register for Editor {
                         .style(styles::tooltip_danger_style)
                     };
                 
-                let content = if pane.is_pinned { Icon::Pin } else { Icon::Unpin };
-                let pin_button = 
-                    button(
-                        content,
-                        "Pin/Unpin",
-                        Event::TogglePin(id)
-                    );
+                let (content, label) = if pane.is_pinned { (Icon::Pin, "Unpin") } else { (Icon::Unpin, "Pin") };
                 
                 let controls = row![
-                        button(
-                            Icon::HorizontalSplit,
-                            "Split Horizontal",
-                            Event::Split(pane_grid::Axis::Horizontal, id),
-                        ),
-                        button(
-                            Icon::VerticalSplit,
-                            "Split Vertical",
-                            Event::Split(pane_grid::Axis::Vertical, id),
-                        )
-                    ]
-                    .push_maybe(if total_panes > 1 && !pane.is_pinned {
+                    button(
+                        content,
+                        label,
+                        Event::TogglePin(id)
+                    ),
+                    button(
+                        Icon::HorizontalSplit,
+                        "Split Horizontal",
+                        Event::Split(pane_grid::Axis::Horizontal, id),
+                    ),
+                    button(
+                        Icon::VerticalSplit,
+                        "Split Vertical",
+                        Event::Split(pane_grid::Axis::Vertical, id),
+                    )
+                ].push_maybe(if total_panes > 1 && !pane.is_pinned {
                         Some(
                             danger_button(
                                 Icon::Close,
@@ -220,20 +196,11 @@ impl Register for Editor {
                         )
                     } else {
                         None
-                    })
-                    .spacing(5)
-                        .padding(5);
+                    }).padding([8,2]).spacing(8);
                 
                 let title_bar = 
                     pane_grid::TitleBar::new(
-                        row![
-                            pin_button,
-                            text("Editor".to_string()),
-                            horizontal_space(),
-                            controls
-                        ].align_y(alignment::Vertical::Center)
-                        .padding(4)
-                        .spacing(5)
+                        controls
                     );
                 
                 pane_grid::Content::new(
@@ -245,12 +212,11 @@ impl Register for Editor {
                 }else{
                     styles::pane_active
                 }).into()
-                
             }).width(Length::Fill)
             .height(Length::Fill)
             .on_click(Event::PaneClicked)
             .on_drag(Event::PaneDragged)
-            .on_resize(5, Event::PaneResized)
+            .on_resize(10, Event::PaneResized)
             .spacing(5);
         
         container(

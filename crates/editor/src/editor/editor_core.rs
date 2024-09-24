@@ -1,5 +1,8 @@
+
+use chrono::Local;
 use iced::{
-    alignment::Horizontal, color, highlighter, 
+    alignment::Horizontal, 
+    color, highlighter, 
     widget::{column, container, responsive, text, text_editor}, 
     Element, Font, Length, Task
 };
@@ -59,7 +62,7 @@ impl Register for EditorCore {
     fn update(&mut self, _event: Event) -> Task<Event> {
         match _event {
             Event::EditorAction(action) => {
-                self.content.perform(action);
+                self.content.perform(action.clone());
                 self.files[self.active_file].content = self.content.text();
                 Task::none()
             }
@@ -67,6 +70,13 @@ impl Register for EditorCore {
                 Task::perform(save_content(EditorCore::new_from(self)), |_| {
                     Event::Saved
                 })
+            },
+            Event::Saved => {
+                if self.files.len() > 0 {
+                    let file = &mut self.files[self.active_file];
+                    file.last_mod = Local::now();
+                }
+                Task::none()
             }
             Event::Quit(idx) => {
                 let i = if let Some(index) = idx {
@@ -111,9 +121,8 @@ impl Register for EditorCore {
             }
             Event::RefreshEditorContent => {
                 if self.files.len() > 0 {
-                    self.content = text_editor::Content::with_text(
-                        self.files[self.active_file].content.as_str(),
-                    );
+                    let content = self.files[self.active_file].content.clone();
+                    self.content = text_editor::Content::with_text(content.as_str());
                 } else {
                     self.content = text_editor::Content::new();
                 }
@@ -213,33 +222,39 @@ fn create_editor(
         }else{
                 "txt".to_string()
         };
+        
         let mut editor = 
             text_editor(&content)
             .font(Font::MONOSPACE)
             .highlight(languaje.as_str(), theme.clone())
             .style(styles::editor_style)
+            .wrapping(text::Wrapping::WordOrGlyph)
+            .size(16)
             .height(Length::Fill);
     
+        let mut texto = "".to_string();
         if files.len() > 0 {
             editor = editor.on_action(Event::EditorAction);
+            let active_info = &files[active_file];
+            let last_mod = active_info.last_mod.format("%v %r (%s timestamp)");
+            let (col, row) = cursor;
+            texto = format!(
+                "{last_mod} | Lines {num_lines} | Cursor: {col} {row}"
+            );
         }
         
-        let indicator = text(format!(
-            "Lines {num_lines} | Cursor: {} {}",
-            cursor.0, cursor.1
-        ))
+        let indicator = text(texto)
         .color(iced::color!(0xc2c2c2))
         .font(Font::DEFAULT)
         .line_height(text::LineHeight::Relative(2.0))
         .align_x(Horizontal::Right)
         .width(Length::Fill);
         
-        column![tabs, editor, indicator]
-            .width(Length::FillPortion(s.width as u16))
-            .height(Length::FillPortion(s.height as u16))
-            .align_x(Horizontal::Center)
-            .padding(5)
-            .into()
+            column![tabs, editor, indicator]
+                .width(Length::FillPortion(s.width as u16))
+                .height(Length::FillPortion(s.height as u16))
+                .align_x(Horizontal::Center)
+                .padding(5).into()
     })
         .into()
 }

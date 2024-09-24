@@ -11,11 +11,11 @@ fn main() {
             || -> (ZenCore, Task<Event>) { 
                 let mut editor = Editor::new();
                 editor.add_keys_bindings(vec![
-                    KeyBinding::new('s', true, false, Event::Save),
-                    KeyBinding::new('q', true, false, Event::Quit(None)),
-                    KeyBinding::new('o', true, false, Event::OpenFile),
-                    KeyBinding::new('r', true, false, Event::ScanAllFiles),
-                    KeyBinding::new('r', true, true, Event::ScanFile(None)),
+                    KeyBinding::new('s', true, false, false, Event::Save),
+                    KeyBinding::new('q', true, false, false, Event::Quit(None)),
+                    KeyBinding::new('o', true, false, false, Event::OpenFile),
+                    KeyBinding::new('r', true, false, false, Event::ScanAllFiles),
+                    KeyBinding::new('r', true, true,  false, Event::ScanFile(None)),
                 ]);
                 
                 let top_menu = Box::new(zen_core::TopMenu::new());

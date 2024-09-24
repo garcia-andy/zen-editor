@@ -33,6 +33,7 @@ iced = {version = "0.13.1", features = ["advanced", "canvas", "highlighter", "im
 inline_tweak = { version = "1.1.1", features = ["derive"] }
 rfd = "0.15.0"
 iced_aw = "0.11.0"
+chrono = "0.4.38"
 
 [profile.release]
 debug = "limited"

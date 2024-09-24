@@ -2,7 +2,7 @@ use iced::{widget::{container, Column}, Element, Length, Subscription, Task, The
 pub use registers::{Register, Event};
 
 // registers
-pub use editor::{Editor, KeyBinding};
+pub use editor::{Editor, key_bindings::*};
 pub use top_menu::TopMenu;
 
 pub struct ZenCore {

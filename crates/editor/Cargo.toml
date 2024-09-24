@@ -18,6 +18,7 @@ rfd.workspace = true
 registers = { path = "../registers" }
 ui = { path = "../ui" }
 iced_aw.workspace = true
+chrono.workspace = true
 
 [lints]
 workspace = true
