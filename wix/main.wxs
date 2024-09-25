@@ -60,8 +60,8 @@
 
     <Product
         Id='*'
-        Name='zen-editor'
-        UpgradeCode='48D83F5F-F191-4DC0-BFFE-13F978658A6C'
+        Name='zen'
+        UpgradeCode='FE64A90E-770F-4E80-A629-8CA0C0EB5D35'
         Manufacturer='Andy Garcia'
         Language='1033'
         Codepage='1252'
@@ -83,11 +83,11 @@
             DowngradeErrorMessage='A newer version of [ProductName] is already installed. Setup will now exit.'/>
 
         <Media Id='1' Cabinet='media1.cab' EmbedCab='yes' DiskPrompt='CD-ROM #1'/>
-        <Property Id='DiskPrompt' Value='zen-editor Installation'/>
+        <Property Id='DiskPrompt' Value='zen Installation'/>
 
         <Directory Id='TARGETDIR' Name='SourceDir'>
             <Directory Id='$(var.PlatformProgramFilesFolder)' Name='PFiles'>
-                <Directory Id='APPLICATIONFOLDER' Name='zen-editor'>
+                <Directory Id='APPLICATIONFOLDER' Name='zen'>
                     
                     <!--
                       Enabling the license sidecar file in the installer is a four step process:
@@ -110,7 +110,7 @@
                     -->
 
                     <Directory Id='Bin' Name='bin'>
-                        <Component Id='Path' Guid='5B4830CE-B2D8-4069-84D3-1C85AD13ABF5' KeyPath='yes'>
+                        <Component Id='Path' Guid='FF2F5345-F3D5-40C7-BCD6-5999089503ED' KeyPath='yes'>
                             <Environment
                                 Id='PATH'
                                 Name='PATH'
@@ -123,9 +123,9 @@
                         <Component Id='binary0' Guid='*'>
                             <File
                                 Id='exe0'
-                                Name='zen-editor.exe'
+                                Name='zen.exe'
                                 DiskId='1'
-                                Source='$(var.CargoTargetBinDir)\zen-editor.exe'
+                                Source='$(var.CargoTargetBinDir)\zen.exe'
                                 KeyPath='yes'/>
                         </Component>
                     </Directory>

@@ -1,5 +1,5 @@
 [package]
-name = "zen-core"
+name = "zen_core"
 version.workspace = true
 edition.workspace = true
 description.workspace = true
