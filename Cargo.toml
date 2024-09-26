@@ -1,6 +1,5 @@
-[package]
-name = "zen"
-version = "0.0.2"
+[workspace.package]
+version = "0.0.3"
 edition = "2021"
 description = "The iced-rs code editor."
 publish = true
@@ -9,6 +8,18 @@ license-file = "LICENSE"
 readme = "README.md"
 homepage = "https://github.com/agf030124/zen-editor"
 repository = "https://github.com/agf030124/zen-editor"
+
+[package]
+name = "zen"
+version.workspace = true
+edition.workspace = true
+description.workspace = true
+publish.workspace = true
+authors.workspace = true
+license-file.workspace = true
+readme.workspace = true
+homepage.workspace = true
+repository.workspace = true
 
 [package.metadata.wix]
 upgrade-guid = "FE64A90E-770F-4E80-A629-8CA0C0EB5D35"
@@ -20,16 +31,6 @@ eula = false
 resolver = "2"
 members = [ "crates/editor", "crates/registers", "crates/top_menu", "crates/ui", "crates/zen_core"]
 
-[workspace.package]
-version = "0.0.2"
-edition = "2021"
-description = "The iced-rs code editor."
-publish = true
-authors = ["Andy Garcia <agf030124@gmail.com>"]
-license-file = "LICENSE"
-readme = "README.md"
-homepage = "https://github.com/agf030124/zen-editor"
-repository = "https://github.com/agf030124/zen-editor"
 
 [workspace.metadata.bundle]
 identifier = "com.github.agf030124.zen"
