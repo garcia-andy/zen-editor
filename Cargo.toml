@@ -1,5 +1,5 @@
 [workspace.package]
-version = "0.0.3"
+version = "0.0.1"
 edition = "2021"
 description = "The iced-rs code editor."
 publish = true
@@ -62,36 +62,13 @@ lto = "thin"
 [workspace.lints.clippy]
 dbg_macro = "deny"
 todo = "deny"
-
-# Motivation: We use `vec![a..b]` a lot when dealing with ranges in text, so
-# warning on this rule produces a lot of noise.
 single_range_in_vec_init = "allow"
-
-# These are all of the rules that currently have violations in the Zed
-# codebase.
-#
-# We'll want to drive this list down by either:
-# 1. fixing violations of the rule and begin enforcing it
-# 2. deciding we want to allow the rule permanently, at which point
-#    we should codify that separately above.
-#
-# This list shouldn't be added to; it should only get shorter.
-# =============================================================================
-
-# There are a bunch of rules currently failing in the `style` group, so
-# allow all of those, for now.
 style = { level = "allow", priority = -1 }
-
-# Temporary list of style lints that we've fixed so far.
 module_inception = { level = "deny" }
 question_mark = { level = "deny" }
 redundant_closure = { level = "deny" }
-# Individual rules that have violations in the codebase:
 type_complexity = "allow"
-# We often return trait objects from `new` functions.
 new_ret_no_self = { level = "allow" }
-# We have a few `next` functions that differ in lifetimes
-# compared to Iterator::next. Yet, clippy complains about those.
 should_implement_trait = { level = "allow" }
 
 [workspace.metadata.cargo-machete]
@@ -104,9 +81,7 @@ cargo-dist-version = "0.22.1"
 # CI backends to support
 ci = "github"
 # The installers to generate for each app
-installers = ["shell", "powershell", "npm", "homebrew", "msi"]
-# A GitHub repo to push Homebrew formulas to
-tap = "garcia-andy/homebrew_tap"
+installers = ["shell", "powershell", "npm", "msi"]
 # Target platforms to build apps for (Rust target-triple syntax)
 targets = ["x86_64-apple-darwin", "x86_64-unknown-linux-gnu", "x86_64-pc-windows-msvc"]
 # The archive format to use for windows builds (defaults .zip)
@@ -115,7 +90,5 @@ windows-archive = ".tar.gz"
 unix-archive = ".tar.gz"
 # Path that installers should place binaries in
 install-path = "CARGO_HOME"
-# Publish jobs to run in CI
-publish-jobs = ["homebrew"]
 # Whether to install an updater program
 install-updater = true
