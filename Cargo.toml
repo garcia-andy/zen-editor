@@ -1,6 +1,6 @@
 [package]
 name = "zen"
-version = "0.0.1"
+version = "0.0.2"
 edition = "2021"
 description = "The iced-rs code editor."
 publish = true
@@ -21,7 +21,7 @@ resolver = "2"
 members = [ "crates/editor", "crates/registers", "crates/top_menu", "crates/ui", "crates/zen_core"]
 
 [workspace.package]
-version = "0.0.1"
+version = "0.0.2"
 edition = "2021"
 description = "The iced-rs code editor."
 publish = true
